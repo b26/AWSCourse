@@ -1,0 +1,85 @@
+Description: >
+  Application Load Balancer configuration template
+
+Parameters:
+  VpcId:
+    Type: String
+  Subnets:
+    Type: List<AWS::EC2::Subnet::Id>
+
+Resources:
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub ${AWS::StackName}-alb
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+      VpcId: !Ref VpcId
+
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Subnets: !Ref Subnets
+      SecurityGroups:
+        - !Ref SecurityGroups
+  
+  LoadBalancerListner:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup
+
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancerV2::TargetGroup
+    DependsOn: LoadBalancer
+    Properties:
+      VpcId: !Ref VpcId
+      Port: 80
+      Protocol: HTTP
+      Matcher:
+        HttpCode: 200-299
+      HealthCheckIntervalSeconds: 10
+      HealthCheckPath: /
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timout_seconds
+          Value: 30
+        - Key: stickiness:enabled
+          Value: true
+        - Key: stickiness.lb_cookie.duration_seconds
+          Value: 86400
+        - Key: stickiness.type
+          Value: lb_cookie
+  
+  ListenerRule:
+    Type: AWS::ElasticBalancingV2::ListenerRule
+    Properties:
+      ListenerArn: !Ref LoadBalancerListener
+      Prority: 1
+      Conditions:
+        - Field: path-pattern
+          Values: 
+            - /
+      Actions:
+        - TargetGroupArn: !Ref TargetGroup
+          Type: forward
+
+Outputs:
+  TargetGroup:
+    Value: !Ref TargetGroup
+
+  ServiceUrl:
+    Description: Url of the load balancer for the sample service.
+    Value: !Sub http://${LoadBalancer.DNSName}
+  
+  SecurityGroup:
+    Value: !Ref SecurityGroup

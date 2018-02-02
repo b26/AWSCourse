@@ -1,0 +1,24 @@
+Resources:
+  CrawlerSSHGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable SSH access via port 22
+      SecurityGroupIngress:
+        - CidrIp: 10.0.48.0/24
+          FromPort: 22
+          ToPort: 22
+          IpProtocol: tcp
+        - CidrIp: 10.0.112.0/24
+          FromPort: 22
+          IpProtocol: tcp
+          ToPort: 22
+        - CidrIp: 10.0.178.0/24
+          FromPort: 22
+          ToPort: 22
+          IpProtocol: tcp
+Outputs:
+  CrawlerSSHStackSecurityGroup:
+    Description: SSH Security Group for Crawlers
+    Value: !Ref CrawlerSSHGroup
+    Export:
+      Name: SSHCrawlerSecurityGroup
