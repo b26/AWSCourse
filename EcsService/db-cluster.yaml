@@ -1,0 +1,72 @@
+Description: >
+  Aurora Database Cluster with one replication instance and Multi Availability Zones
+
+  Parameters:
+
+    DbPassword:
+      Type: String
+
+    Subnet1: 
+      Type: String
+    
+    Subnet2: 
+      Type: String
+    
+    Az1: 
+      Type: String
+
+    Az2:
+      Type: String
+
+  Resources:
+
+    DBSubnetGroup:
+      Type: AWS::RDS::DBSubnetGroup
+      Properties:
+        DBSubnetGroupDescription: Database Subnet Groups.
+        SubnetIds: !Join [",", [ !Ref Subnet1, !Ref Subnet2 ]]
+    
+    RDSDBClusterParamterGroup:
+      Type: AWS::RDS::DBClusterParamterGroup
+      Properties:
+        Description: Cloudformation Aurora Cluster Parameter Group
+        Family: aurora5.6
+        Parameters:
+          time_zone: US/Eastern
+
+    RDSCluster:
+      Type: AWS::RDS::DBCluster
+      Properties:
+        MasterUsername: admin
+        MasterUserPassword: !Ref DbPassword
+        DatabaseName: myDB
+        Engine: aurora
+        DBSubnetGroupName: !Ref DBSubnetGroup
+        DbClusterParamterGroupName: !Ref RDSDBClusterParamterGroup
+
+    RDSDBInstance1:
+      Type: AWS::RDS::DBInstance
+      Properties:
+        DBSubnetGroupName: !Ref DbSubnetGroup
+        DBParameterGroupName: !Ref DBParameterGroup
+        Engine: aurora
+        DBClusterIdentifier: !Ref RDSCluster
+        PubliclyAccessible: false
+        AvailabilityZone: !Ref Az1
+        DBInstanceClass: db.r3.xlarge
+
+    RDSDBInstance2:
+      Type: AWS::RDS::DBInstance
+      Properties:
+        DBSubnetGroupName: !Ref DBSubnetGroup
+        DBParameterGroupName: !Ref RDSDBParameterGroup
+        Engine: aurora
+        DBClusterIdentifier: !Ref RDSCluster
+        PubliclyAccessible: false
+        AvailabilityZone: !Ref Az2
+        DBInstanceClass: db.r3.xlarge
+
+  Outputs:
+    dbClusterURL:
+      Description: Database Cluster URL Endpoint.
+      Value: !GetAtt RDSCluster.Endpoint.Address
