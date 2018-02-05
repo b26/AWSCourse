@@ -11,10 +11,10 @@ Parameters:
     Default: 0
   
   TargetGroup:
-    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Type: String
 
   Cluster:
-    Type: AWS::ECS::Cluster
+    Type: String
 
 Resources:
 
@@ -22,14 +22,15 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       Path: /
-      RoleName: !Sub ecs-service-${AWS::StackName}
-      AssumeRolePolicyDocument:
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - ecs.amazonaws.com
-            Action: sts.AssumeRole
+      RoleName: !Sub ecs-service-role
+      AssumeRolePolicyDocument: |
+        {
+            "Statement": [{
+                "Effect": "Allow",
+                "Principal": { "Service": [ "ecs.amazonaws.com" ]},
+                "Action": [ "sts:AssumeRole" ]
+            }]
+        }
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceRole
 
@@ -44,7 +45,7 @@ Resources:
       Family: !Sub ${AWS::StackName}--app
       ContainerDefinitions:
         - Name: xcicdoveraws-app
-          Image: ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}:${Tag}
+          Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}:${Tag}
           Cpu: 49
           Memory: 490
           PortMappings:
