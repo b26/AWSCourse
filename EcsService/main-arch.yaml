@@ -1,23 +1,11 @@
 Description: >
-  Main Architecture Template. Configuration based on CodeCommit, S3, ECS, Docker & RDS - CI & CD over AWS
+  Data Mining Cluster Cloud Formation Template
 
 
 Parameters:
   StackName:
     Type: String
     Default: Test-Docker-Continous-Integration
-  CodeCommitRepo:
-    Type: String
-    Description: CodeCommit Repository Name
-
-  RepositoryBranch:
-    Type: String
-    Description: CodeCommit Repository Branch
-
-  DbPassword:
-    Type: String
-    Description: BackEnd DB Password
-    Default: TrustScience99
 
 
 Metadata:
@@ -57,14 +45,6 @@ Resources:
         VpcId: !GetAtt VPC.Outputs.VpcId
         VpcDefaultSecurityGroup: !GetAtt VPC.Outputs.VpcDefaultSecurityGroup
 
-  EcsService:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      TemplateURL: https://s3.amazonaws.com/linkedin-skills/service.yaml
-      Parameters:
-        Cluster: !GetAtt EcsCluster.Outputs.ClusterName
-        TargetGroup: !GetAtt LoadBalancer.Outputs.TargetGroup
-
   LoadBalancer:
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -72,32 +52,6 @@ Resources:
       Parameters:
         Subnets: !GetAtt VPC.Outputs.Subnets
         VpcId: !GetAtt VPC.Outputs.VpcId
-
-  DatabaseCluster:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      TemplateURL: https://s3.amazonaws.com/linkedin-skills/db-cluster.yaml
-      Parameters:
-        DbPassword: !Ref DbPassword
-        Subnet1: !GetAtt VPC.Outputs.Subnet1
-        Subnet2: !GetAtt VPC.Outputs.Subnet2
-        Az1: !GetAtt VPC.Outputs.Az1
-        Az2: !GetAtt VPC.Outputs.Az2
-
-  # DeploymentPipeline:
-  #  Type: AWS::CloudFormation::Stack
-  #  Properties:
-  #    TemplateURL: https://s3.amazonaws.com/linkedin-skills/deployment-pipeline.yaml
-  #    Parameters:
-  #      Cluster: !GetAtt EcsCluster.Outputs.ClusterName
-  #      CodeCommitRepo: !Ref CodeCommitRepo
-  #      RepositoryBranch: !Ref RepositoryBranch 
-  #      TargetGroup: !GetAtt LoadBalancer.Outputs.TargetGroup
-  #      Repository: !GetAtt EcsService.Outputs.Repository
-  #      StackName: !GetAtt EcsService.Outputs.StackName
-  #      TemplateBucket: xcicdoveraws
-  #      DbClusterEndpoint: !GetAtt DatabaseCluster.Outputs.dbClusterURL
-  #      DbPassword: !Ref DbPassword
 
 
 Outputs:

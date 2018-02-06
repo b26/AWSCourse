@@ -1,0 +1,83 @@
+Description: 
+  Data Mining ECS Cluster Cloud Formation Template
+
+Parameters:
+
+  ClusterName:
+    Type: String
+
+  VpcCidrBlock: 
+    Type: String
+    Default: 10.0.0.0/16
+  
+  SubnetCidrBlock:
+    Type: String
+    Default: 10.0.10.0/24
+
+
+Resources:
+# VPC Configuration.
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCidrBlock
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+  
+  Subnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [0, !GetAZs ]
+      MapPublicIpOnLaunch: true
+      CidrBlock: !Ref SubnetCidrBlock
+  
+  RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+
+  DefaultRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref RouteTable
+      GatewayId: !Ref InternetGateway
+      DestinationCidrBlock: 0.0.0.0/0
+
+  SubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref RouteTable
+      SubnetId: !Ref Subnet
+
+
+  # Security Group.
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub ${AWS::StackName}
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          IpProtocol: Tcp
+          FromPort: 80
+          ToPort: 80
+      VpcId: !Ref VPC
+
+
+# ECS Cluster.
+  Cluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Ref ClusterName
+
+Outputs:
+  ClusterName:
+    Description: ECS cluster Name
+    Value: !Ref Cluster
