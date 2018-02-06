@@ -1,0 +1,133 @@
+Description: >
+  Test Custom Fargate Template
+
+Parameters:
+
+  ServiceName:
+    Type: String
+  
+  ImageRepositoryUrl:
+    Type: String
+
+  VpcCidr:
+    Type: String
+    Default: 10.0.0.0/16
+
+  SubnetCidr:
+    Type: String
+    Default: 10.0.10.0/24
+  
+
+
+Resources:
+
+# VPC Configuration.
+
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCidr
+      Tags:
+        - Key: Name
+          Value: !Ref ServiceName
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      - Key: Name
+        Value: !Ref ServiceName
+
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+  
+  Subnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [0, !GetAZs ]
+      MapPublicIpOnLaunch: true
+      CidrBlock: !Ref SubnetCidr
+      Tags:
+        - Key: Name
+          Value: !Ref ServiceName
+  
+  RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+
+  DefaultRoute:
+    Type: AWS::EC2::DefaultRoute
+    Properties:
+      RouteTableId: !Ref RouteTable
+      GatewayId: !Ref InternetGateway
+      DestinationCidrBlock: 0.0.0.0/0
+
+  SubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref RouteTable
+      SubnetId: !Ref Subnet
+
+
+# Security Group
+
+SecurityGroup:
+  Type: AWS::EC2::SecurityGroup
+  Properties:
+    GroupDescription: !Sub ${ServiceName}-Group-Security
+    SecurityGroupIngress:
+      - CidrIp: 0.0.0.0/0
+        IpProtocol: Tcp
+        FromPort: 80
+        ToPort: 80
+    VpcId: !Ref VPC
+  
+
+# Queue Defintion.
+
+
+  Queue:
+    Type: AWS::SQS::Queue
+
+
+# Elastic Load Balancing with Target Group. 
+
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+
+  
+  
+  S3:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: AuthenticatedRead
+      BucketName: !Sub ${ServiceName}
+  
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      RequiresCompatibilities: FARGATE
+      FamilyName: !Sub ${AWS::StackName}--app
+      TaskRoleArn: arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      NetworkMode: awsvpc
+      ContainerDefinitions:
+        - Name: !Sub Fargate::Task::${ServiceName}
+          Image: !Sub ImageRepositoryUrl
+          Cpu: 250
+          Memory: 512
+          PortMappings:
+            - ContainerPort: 3000
+          Environment:
+            - Name: Tag
+              Value: !Ref Tag
+
+
+Outputs:
+  
+  ServiceUrl:
+    Description: !Sub ${ServiceName} Url
+    Value: !GetAtt LoadBalancer.ServiceUrl

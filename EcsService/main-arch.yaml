@@ -40,7 +40,7 @@ Resources:
   VPC:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3.amazonaws.com/xcicdoveraws/vpc.yaml
+      TemplateURL: https://s3.amazonaws.com/linkedin-skills/vpc.yaml
       Parameters:
         Name: !Ref AWS::StackName
         VpcCIDR: 10.10.0.0/16
@@ -50,7 +50,7 @@ Resources:
   EcsCluster:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3.amazonaws.com/xcicdoveraws/ecs-cluster.yaml
+      TemplateURL: https://s3.amazonaws.com/linkedin-skills/ecs-cluster.yaml
       Parameters:
         LoadBalancerSecurityGroup: !GetAtt LoadBalancer.Outputs.SecurityGroup
         Subnets: !GetAtt VPC.Outputs.Subnets
@@ -60,7 +60,7 @@ Resources:
   EcsService:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3.amazonaws.com/xcicdoveraws/service.yaml
+      TemplateURL: https://s3.amazonaws.com/linkedin-skills/service.yaml
       Parameters:
         Cluster: !GetAtt EcsCluster.Outputs.ClusterName
         TargetGroup: !GetAtt LoadBalancer.Outputs.TargetGroup
@@ -68,7 +68,7 @@ Resources:
   LoadBalancer:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3.amazonaws.com/xcicdoveraws/load-balancer.yaml
+      TemplateURL: https://s3.amazonaws.com/linkedin-skills/load-balancer.yaml
       Parameters:
         Subnets: !GetAtt VPC.Outputs.Subnets
         VpcId: !GetAtt VPC.Outputs.VpcId
@@ -76,7 +76,7 @@ Resources:
   DatabaseCluster:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3.amazonaws.com/xcicdoveraws/db-cluster.yaml
+      TemplateURL: https://s3.amazonaws.com/linkedin-skills/db-cluster.yaml
       Parameters:
         DbPassword: !Ref DbPassword
         Subnet1: !GetAtt VPC.Outputs.Subnet1
@@ -87,7 +87,7 @@ Resources:
   # DeploymentPipeline:
   #  Type: AWS::CloudFormation::Stack
   #  Properties:
-  #    TemplateURL: https://s3.amazonaws.com/xcicdoveraws/deployment-pipeline.yaml
+  #    TemplateURL: https://s3.amazonaws.com/linkedin-skills/deployment-pipeline.yaml
   #    Parameters:
   #      Cluster: !GetAtt EcsCluster.Outputs.ClusterName
   #      CodeCommitRepo: !Ref CodeCommitRepo
